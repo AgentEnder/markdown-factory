@@ -1,0 +1,34 @@
+{
+  "name": "markdown-factory",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/markdown-factory/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "@nrwl/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/packages/markdown-factory",
+        "main": "packages/markdown-factory/src/index.ts",
+        "tsConfig": "packages/markdown-factory/tsconfig.lib.json",
+        "assets": ["packages/markdown-factory/*.md"]
+      }
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["packages/markdown-factory/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nrwl/vite:test",
+      "outputs": ["coverage/packages/markdown-factory"],
+      "options": {
+        "passWithNoTests": true,
+        "reportsDirectory": "../../coverage/packages/markdown-factory"
+      }
+    }
+  },
+  "tags": []
+}
