@@ -1,3 +1,37 @@
+1. [Markdown Factory](#markdown-factory)
+
+	1. [Why?](#why)
+
+	2. [Getting Started](#getting-started)
+
+		1. [Installation](#installation)
+
+		2. [Usage](#usage)
+
+	3. [Examples](#examples)
+
+	4. [API](#api)
+
+		1. [Headers](#headers)
+
+		2. [`link`](#link)
+
+		3. [`linkToHeader`](#linktoheader)
+
+		4. [`table`](#table)
+
+		5. [`tableOfContents`](#tableofcontents)
+
+		6. [`codeBlock`](#codeblock)
+
+		7. [`stripIndents`](#stripindents)
+
+		8. [`blockQuote`](#blockquote)
+
+		9. [`orderedList`](#orderedlist)
+
+		10. [`unorderedList`](#unorderedlist)
+
 # Markdown Factory
 
 Utilities to easily generate valid markdown from within JavaScript
@@ -5,6 +39,8 @@ Utilities to easily generate valid markdown from within JavaScript
 ## Why?
 
 For static content, this library is **mostly** unnecessary. However, when generating a report from a dynamic data source this library can be rather useful. 
+
+An example of using this library for dynamic data, could be the implementation of the `tableOfContents` function. Inside it, we parse the headings and then use the utils to generate an appropriate table of contents. You can read more about it here: [`tableOfContents`](#tableofcontents)
 
 ## Getting Started
 
@@ -21,6 +57,14 @@ import { h1, h2, h3 } from 'markdown-factory';
 h1('Hello World', h2('subheading', h3('sub-subheading', 'foo-bar')))
 ```
 
+## Examples
+
+Some advanced usages of the library can be found below:
+
+- The [`generate-readme`](./tools/generate-readme.ts) script generates this document
+
+- The [implementation file](./packages/markdown-factory/src/lib/markdown.ts) for this library contains `tableOfContents` which dynamically composes several of these utility functions.
+
 ## API
 
 ### Headers
@@ -33,6 +77,28 @@ h1('Title',
   h2('Section 2', h3('Subsection 2', 'bar')), 
   h2('Section 3', h3('Subsection 3', 'baz'))
 )
+```
+
+### `link`
+
+A link can be generated using the `link` function. It takes a url and optionally a label as arguments.
+
+```typescript
+link("https://google.com", "Google")
+```
+
+### `linkToHeader`
+
+A link to a header can be generated using the `linkToHeader` function. It takes a header and optionally a label as arguments.
+
+This differs from `link` in that the contents of the ref are sanitized and parsed from header text first. This involves removing all non-alphanumeric characters, and replacing spaces with dashes. If this doesn't suit your use case, you should use `link` directly instead.
+
+```typescript
+linkToHeader("Resources!", "More Resources and Information")
+```
+
+```markdown
+[More Resources and Information](#resources)
 ```
 
 ### `table`
@@ -59,6 +125,40 @@ table(items, [ {
 }]);
 ```
 
+### `tableOfContents`
+
+The `tableOfContents` function takes a depth and the contents that it should cover. It will generate a table of contents for the headers up to the specified depth. For example, if you had a document with the following headers:
+
+```markdown
+# Title
+## Section 1
+### Subsection 1
+### Subsection 2
+## Section 2
+### Subsection 3
+#### Subsubsection 1
+### Subsection 4
+```
+
+You could generate a table of contents like this:
+
+```typescript
+tableOfContents(3, mrkdwnContents);
+```
+
+The expected output would be:
+
+```markdown
+- [Section 1](#section-1)
+  - [Subsection 1](#subsection-1)
+  - [Subsection 2](#subsection-2)
+- [Section 2](#section-2)
+  - [Subsection 3](#subsection-3)
+  - [Subsection 4](#subsection-4)
+```
+
+> Note: The depth passed into the function is equivalent to the maximum "level" of the headings displayed. e.g., `depth=3` would not show any h4 or h5 headings.
+
 ### `codeBlock`
 
 The `codeBlock` function takes a string of code and an optional language. It will wrap the code in a code block, and optionally add syntax highlighting for the language. For example:
@@ -76,10 +176,10 @@ The `stripIndents` function is rather unique in terms of this libraries function
 import { codeBlock, stripIndents } from 'markdown-factory';
 if(someCondition) {
   if(someOtherCondition) {
-    codeBlock(stripIndents\`
+    codeBlock(stripIndents`
       const foo = "bar";
       const baz = "qux";
-    \`, 'typescript');
+    `, 'typescript');
   }
 }
 ```
@@ -90,8 +190,8 @@ Instead of this:
 import { codeBlock } from 'markdown-factory';
 if(someCondition) {
   if(someOtherCondition) {
-    codeBlock(\`const foo = "bar";
-const baz = "qux";\`, 'typescript');
+    codeBlock(`const foo = "bar";
+const baz = "qux";`, 'typescript');
   }
 }
 ```
@@ -123,6 +223,46 @@ h1('Sandwich Recipe', orderedList(
 ));
 ```
 
+You can also pass an options object as the first argument to the `orderedList` function. The options object can contain the following properties:
+
+- `startIdx` - The number to start the list at. Defaults to 1.
+
+- level - The level of the list (for nesting lists). Defaults to 1.
+
+For example, the following code would produce a nested list that starts at 3:
+
+```typescript
+import { h1, orderedList } from 'markdown-factory';
+h1('Sandwich Recipe', orderedList(
+  lines(
+    'Slice bread', 
+    orderedList(
+      {startIdx: 3, level: 2}, 
+      'Grab knife', 
+      'Cut bread', 
+      'Place on plate'
+    )
+  ),
+  'Spread mayo'
+)
+```
+
+> Note - The actual numbers in an ordered list are not used in rendered markdown, but they are visible in the source. This is why the `startIdx` option is useful. For example, the following two lists are identical once rendered:
+>
+> ```markdown
+> # List 1
+> 
+> 1. Item 1
+> 2. Item 2
+> 3. Item 3
+> 
+> # List 2
+> 
+> 1. Item 1
+> 1. Item 2
+> 1. Item 3
+> ```
+
 ### `unorderedList`
 
 The `unorderedList` function takes a list of strings to render as an unordered list. For example:
@@ -138,4 +278,28 @@ h1('Sandwich Ingredients', unorderedList(
   'Meat',
   'Condiments'
 ));
+```
+
+You can also pass an options object as the first argument to the `unorderedList` function. The options object can contain the following properties:
+
+- level - The level of the list (for nesting lists). Defaults to 1.
+
+For example, the following code would produce a nested list:
+
+```typescript
+import { h1, unorderedList } from 'markdown-factory';
+h1('Sandwich Ingredients', unorderedList(
+  'Bread',
+  'Ham',
+  lines(
+    'Condiments', 
+    unorderedList(
+      { level: 2 }, 
+      'Ketchup', 
+      'Mayo', 
+      'Mustard'
+    )
+  ),
+  'Spread mayo'
+)
 ```

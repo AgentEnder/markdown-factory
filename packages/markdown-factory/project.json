@@ -28,6 +28,15 @@
         "passWithNoTests": true,
         "reportsDirectory": "../../coverage/packages/markdown-factory"
       }
+    },
+    "publish": {
+      "dependsOn": ["build"],
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "npm publish dist/packages/markdown-factory"
+        ]
+      }
     }
   },
   "tags": []

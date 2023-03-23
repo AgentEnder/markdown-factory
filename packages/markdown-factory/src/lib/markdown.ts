@@ -43,7 +43,7 @@ export function code(contents: string) {
 }
 
 export function codeBlock(contents: string, language?: string) {
-  return `\`\`\`${language}
+  return `\`\`\`${language ? language : ''}
 ${contents}
 \`\`\``;
 }
@@ -105,15 +105,14 @@ export function table<
   ].join('\n');
 }
 
-export function blockQuote(...fragments: string[]) {
-  return lines(
-    ...fragments.map((fragment) =>
-      fragment
-        .split('\n')
-        .map((line) => '> ' + line)
-        .join('\n')
-    )
+export function blockQuote(...fragments: string[]): string {
+  const mappedFragments = fragments.map((f) =>
+    f
+      .split('\n')
+      .map((line) => `> ${line}`)
+      .join('\n')
   );
+  return mappedFragments.join('\n>\n').trim();
 }
 
 export type OrderedListOptions = { level?: number; startIdx?: number };
@@ -161,64 +160,113 @@ export function lines(...ls: (string[] | string)[]) {
   return ls.flat().join('\n\n');
 }
 
-// TODO: GET THIS FN WORKING
-// export function tableOfContents(maxDepth: number, ...s: string[]) {
-//   const allLines = s.flatMap((l) => l.split('\n'));
-//   type Section = { label: string; children?: Section[] };
+export function linkToHeader(header: string, linkText?: string): string {
+  const sanitized = header
+    .toLowerCase()
+    .replace(/[^a-zA-Z0-9 -]/g, '')
+    .replace(/[\s+]/g, '-');
+  return link(`#${sanitized}`, linkText ?? header);
+}
 
-//   // This table of contents doesn't support root header / title.
-//   function collectSubsections(
-//     depth: number,
-//     lines: string[],
-//     startIndex: number
-//   ): { subsections: Section[]; nextIndex: number } {
-//     const subsections: Section[] = [];
-//     let i = startIndex;
-//     while (i < lines.length) {
-//       const line = lines[i];
-//       const match = line.match(/^(#+) (.*)$/);
-//       if (match) {
-//         const [, header, label] = match;
-//         const headerLevel = header.length;
-//         console.log('Checking line', lines[i], 'at index', i, {
-//           headerLevel,
-//           depth,
-//         });
-//         if (headerLevel > depth) {
-//           const children = collectSubsections(headerLevel, lines, i + 1);
-//           subsections.push({ label, children: children.subsections });
-//           i = children.nextIndex;
-//           continue;
-//         } else if (headerLevel === depth) {
-//           subsections.push({ label });
-//         } else {
-//           break;
-//         }
-//       }
-//       i++;
-//     }
-//     return { subsections, nextIndex: i };
-//   }
+export function tableOfContents(maxDepth: number, ...s: string[]) {
+  const allLines = s.flatMap((l) => l.split('\n'));
+  type Section = { depth: number; label: string; children?: Section[] };
 
-//   const sections = collectSubsections(2, allLines, 0).subsections;
+  // This table of contents doesn't support root header / title.
+  function collectSubsections(lines: string[]) {
+    const sections: Section[] = [];
+    const stack: Section[] = [];
 
-//   function buildListsFromSection(section: Section, startIdx = 1, level = 1) {
-//     const lists: string[] = [];
-//     lists.push(orderedList({ level, startIdx }, section.label));
-//     if (section.children) {
-//       const newLists = section.children.map((s, idx) =>
-//         buildListsFromSection(s, idx + 1, level + 1)
-//       );
-//       lists.push(...newLists);
-//     }
-//     return lines(lists);
-//   }
+    function getHeader(line: string) {
+      const match = line.match(/^(#+) (.*)$/);
+      if (match) {
+        const [, header, label] = match;
+        return { depth: header.length, label: linkToHeader(label) };
+      }
+      return null;
+    }
 
-//   return lines(
-//     sections.map((s, idx) => buildListsFromSection(s, idx + 1)),
-//     s
-//   );
-// }
+    for (let idx = 0; idx < lines.length; idx++) {
+      let line = lines[idx];
+
+      // Ignore headers within code blocks
+      if (line.startsWith('```')) {
+        while (!line.endsWith('```')) {
+          idx++;
+          line = lines[idx];
+        }
+      }
+
+      const header = getHeader(line);
+      if (header) {
+        const top = stack.length && stack[stack.length - 1];
+        if (!top) {
+          stack.push(header);
+          sections.push(header);
+        } else {
+          if (header.depth === top.depth) {
+            stack.pop();
+            const parent = stack[stack.length - 1];
+            if (parent) {
+              parent.children ??= [];
+              parent.children.push(header);
+            } else {
+              sections.push(header);
+            }
+            stack.push(header);
+          } else if (header.depth > top.depth) {
+            const newElement = {
+              depth: header.depth,
+              label: header.label,
+              children: [],
+            };
+            top.children ??= [];
+            top.children.push(newElement);
+            stack.push(newElement);
+          } else {
+            let next: Section | undefined = stack[stack.length - 1];
+            while (next) {
+              if (next && next.depth > header.depth) {
+                next = stack.pop();
+              } else {
+                break;
+              }
+            }
+            const parent = stack[stack.length - 1];
+            if (parent) {
+              parent.children ??= [];
+              parent.children.push(header);
+            } else {
+              sections.push(header);
+            }
+            stack.push(header);
+          }
+        }
+      }
+    }
+
+    return sections;
+  }
+
+  const sections = collectSubsections(allLines);
+
+  function buildListsFromSection(section: Section, startIdx = 1, level = 1) {
+    const lists: string[] = [];
+    lists.push(orderedList({ level, startIdx }, section.label));
+    if (section.children && maxDepth > level) {
+      const newLists = section.children.map((s, idx) =>
+        buildListsFromSection(s, idx + 1, level + 1)
+      );
+      lists.push(...newLists);
+    }
+    return lines(lists);
+  }
+
+  return lines(
+    sections.map((s, idx) => buildListsFromSection(s, idx + 1)),
+    s
+  );
+}
 
 /**
  * Removes indents, which is useful for printing warning and messages.
@@ -247,7 +295,7 @@ export function stripIndents(
     })
   );
   return lines
-    .map((line) => line.slice(minLeadingWhitespaceLength))
+    .map((line) => line.slice(minLeadingWhitespaceLength).replace(/\\+`/g, '`'))
     .join('\n')
     .trim();
 }
