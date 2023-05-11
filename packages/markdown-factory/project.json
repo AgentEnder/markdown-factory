@@ -4,7 +4,7 @@
   "sourceRoot": "packages/markdown-factory/src",
   "projectType": "library",
   "targets": {
-    "build": {
+    "build-base": {
       "executor": "@nrwl/js:tsc",
       "outputs": ["{options.outputPath}"],
       "options": {
@@ -13,6 +13,10 @@
         "tsConfig": "packages/markdown-factory/tsconfig.lib.json",
         "assets": ["packages/markdown-factory/*.md"]
       }
+    },
+    "build": {
+      "dependsOn": ["build-base"],
+      "command": "ts-node --project ./tsconfig.base.json ./tools/extra-build-step.ts --project markdown-factory --targetName build-base"
     },
     "lint": {
       "executor": "@nrwl/linter:eslint",
@@ -33,9 +37,7 @@
       "dependsOn": ["build"],
       "executor": "nx:run-commands",
       "options": {
-        "commands": [
-          "npm publish dist/packages/markdown-factory"
-        ]
+        "commands": ["npm publish dist/packages/markdown-factory"]
       }
     }
   },

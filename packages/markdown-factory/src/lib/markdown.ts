@@ -27,11 +27,11 @@ export function link(ref: string, title?: string) {
 }
 
 export function italics(contents: string) {
-  return `*${contents}*;`;
+  return `*${contents}*`;
 }
 
 export function bold(contents: string) {
-  return `**${contents}**;`;
+  return `**${contents}**`;
 }
 
 export function strikethrough(contents: string) {

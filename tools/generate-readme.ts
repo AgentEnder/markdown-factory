@@ -14,7 +14,7 @@ import {
   unorderedList,
 } from '../packages/markdown-factory/src/lib/markdown';
 
-const contents = tableOfContents(
+export const contents = tableOfContents(
   3,
   h1(
     'Markdown Factory',
@@ -301,4 +301,6 @@ const contents = tableOfContents(
   )
 );
 
-writeFileSync(join(__dirname, '../README.md'), contents);
+if (require.main === module) {
+  writeFileSync(join(__dirname, '../README.md'), contents);
+}

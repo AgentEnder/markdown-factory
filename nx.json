@@ -5,14 +5,18 @@
     "default": {
       "runner": "@nrwl/nx-cloud",
       "options": {
-        "cacheableOperations": ["build", "lint", "test", "e2e"],
+        "cacheableOperations": ["build", "lint", "test", "e2e", "build-base"],
         "accessToken": "ZWJjYWUyYzQtYzhjNC00NjU2LWFkZTUtZGRkNDMxMzMwMzAzfHJlYWQtd3JpdGU="
       }
     }
   },
   "targetDefaults": {
     "build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["build-base"],
+      "inputs": ["production", "^production", "{workspaceRoot}/tools/build-steps/**"]
+    },
+    "build-base": {
+      "dependsOn": ["^build-base"],
       "inputs": ["production", "^production"]
     },
     "test": {

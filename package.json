@@ -1,11 +1,23 @@
 {
   "name": "markdown-utils",
   "version": "0.0.0",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "scripts": {
     "generate-readme": "ts-node ./tools/generate-readme.ts -p ./tsconfig.base.json"
   },
   "private": true,
+  "homepage": "https://github.com/agentender/markdown-factory#readme",
+  "bugs": {
+    "url" : "https://github.com/agentender/markdown-factory/issues"
+  },
+  "author": {
+    "name": "Craigory Coppola",
+    "url": "https://github.com/agentender"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/agentender/markdown-factory.git"
+  },
   "dependencies": {
     "tslib": "^2.3.0"
   },
@@ -19,6 +31,8 @@
     "@nrwl/workspace": "15.8.7",
     "@types/jest": "^29.4.0",
     "@types/node": "^18.15.5",
+    "@types/ora": "^3.2.0",
+    "@types/yargs-parser": "^21.0.0",
     "@typescript-eslint/eslint-plugin": "^5.36.1",
     "@typescript-eslint/parser": "^5.36.1",
     "@vitest/coverage-c8": "~0.25.8",
@@ -29,6 +43,7 @@
     "jest-environment-jsdom": "^29.4.1",
     "jsdom": "~20.0.3",
     "nx": "15.8.7",
+    "ora": "^6.2.0",
     "prettier": "^2.6.2",
     "ts-jest": "^29.0.5",
     "ts-node": "^10.9.1",
@@ -36,6 +51,7 @@
     "vite": "^4.0.1",
     "vite-plugin-eslint": "^1.8.1",
     "vite-tsconfig-paths": "^4.0.2",
-    "vitest": "^0.25.8"
+    "vitest": "^0.25.8",
+    "yargs-parser": "^21.1.1"
   }
 }
