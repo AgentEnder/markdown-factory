@@ -34,7 +34,7 @@
       }
     },
     "publish": {
-      "dependsOn": ["build"],
+      "dependsOn": ["build", "test"],
       "executor": "nx:run-commands",
       "options": {
         "commands": ["npm publish dist/packages/markdown-factory"]

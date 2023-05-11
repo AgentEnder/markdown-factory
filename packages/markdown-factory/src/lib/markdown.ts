@@ -1,25 +1,31 @@
+export function h(level: number, title: string, ...contents: string[]) {
+  assert(level >= 1, 'Heading level must be >= 1.');
+  assert(level <= 6, 'Most markdown engines only support heading levels 1-6.');
+  return lines(`${'#'.repeat(level)} ${title}`, contents);
+}
+
 export function h1(title: string, ...contents: string[]) {
-  return lines(`# ${title}`, contents);
+  return h(1, title, ...contents);
 }
 
 export function h2(title: string, ...contents: string[]) {
-  return lines(`## ${title}`, contents);
+  return h(2, title, ...contents);
 }
 
 export function h3(title: string, ...contents: string[]) {
-  return lines(`### ${title}`, contents);
+  return h(3, title, ...contents);
 }
 
 export function h4(title: string, ...contents: string[]) {
-  return lines(`#### ${title}`, contents);
+  return h(4, title, ...contents);
 }
 
 export function h5(title: string, ...contents: string[]) {
-  return lines(`##### ${title}`, contents);
+  return h(5, title, ...contents);
 }
 
 export function h6(title: string, ...contents: string[]) {
-  return lines(`###### ${title}`, contents);
+  return h(6, title, ...contents);
 }
 
 export function link(ref: string, title?: string) {
@@ -298,4 +304,23 @@ export function stripIndents(
     .map((line) => line.slice(minLeadingWhitespaceLength).replace(/\\+`/g, '`'))
     .join('\n')
     .trim();
+}
+
+function assert(check: boolean, message: `${string}.`, allowByPass = true) {
+  const bypassChecks =
+    allowByPass &&
+    (process.env['MARKDOWN_FACTORY_NO_CHECKS'] === 'true' ||
+      process.env['NODE_ENV'] === 'production');
+  if (!check && !bypassChecks) {
+    const lines: string[] = [
+      message,
+      'If you are targetting an environment where this is known to be supported, please open an issue.',
+    ];
+    if (allowByPass) {
+      lines.push(
+        'As a temporary bypass, you can set MARKDOWN_FACTORY_NO_CHECKS=true to disable checks.'
+      );
+    }
+    throw new Error(lines.join('\n'));
+  }
 }

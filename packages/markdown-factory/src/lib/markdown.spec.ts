@@ -1,6 +1,7 @@
 import {
   blockQuote,
   codeBlock,
+  h,
   h1,
   h2,
   h3,
@@ -240,7 +241,7 @@ This is a multiline blockquote`);
         ###### Level 6"
       `);
     });
-    
+
     it('should handle depth-limited headers', () => {
       const result = tableOfContents(
         3,
@@ -282,6 +283,56 @@ This is a multiline blockquote`);
 
         ###### Level 6"
       `);
+    });
+  });
+
+  describe('headings', () => {
+    it('should handle h1', () => {
+      const result = h1('Hello World');
+      expect(result).toEqual('# Hello World');
+    });
+
+    it('should handle h2', () => {
+      const result = h2('Hello World');
+      expect(result).toEqual('## Hello World');
+    });
+
+    it('should handle h3', () => {
+      const result = h3('Hello World');
+      expect(result).toEqual('### Hello World');
+    });
+
+    it('should handle h4', () => {
+      const result = h4('Hello World');
+      expect(result).toEqual('#### Hello World');
+    });
+
+    it('should handle h5', () => {
+      const result = h5('Hello World');
+      expect(result).toEqual('##### Hello World');
+    });
+
+    it('should handle h6', () => {
+      const result = h6('Hello World');
+      expect(result).toEqual('###### Hello World');
+    });
+
+    it('should error for invalid heading levels', () => {
+      expect(() => h(7, 'Hello World')).toThrowErrorMatchingInlineSnapshot(
+      `
+        "Most markdown engines only support heading levels 1-6.
+        If you are targetting an environment where this is known to be supported, please open an issue.
+        As a temporary bypass, you can set MARKDOWN_FACTORY_NO_CHECKS=true to disable checks."
+      `);
+      expect(() => h(0, 'Hello World')).toThrowErrorMatchingInlineSnapshot(
+      `
+        "Heading level must be >= 1.
+        If you are targetting an environment where this is known to be supported, please open an issue.
+        As a temporary bypass, you can set MARKDOWN_FACTORY_NO_CHECKS=true to disable checks."
+      `);
+      process.env['MARKDOWN_FACTORY_NO_CHECKS'] = 'true';
+      expect(() => h(7, 'Hello World')).not.toThrow();
+      delete process.env['MARKDOWN_FACTORY_NO_CHECKS'];
     });
   });
 });
