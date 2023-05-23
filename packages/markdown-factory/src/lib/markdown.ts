@@ -124,43 +124,95 @@ export function blockQuote(...fragments: string[]): string {
 export type OrderedListOptions = { level?: number; startIdx?: number };
 export type UnorderedListOptions = { level?: number };
 
-export function unorderedList(item: string, ...items: string[]): string;
+// Sig 1
+export function unorderedList(...items: string[]): string;
+
+// Sig 2
+export function unorderedList(items: string[]): string;
+
+// Sig 3
 export function unorderedList(
   options: UnorderedListOptions,
   ...items: string[]
 ): string;
+
+// Sig 4
 export function unorderedList(
-  itemOrOptions: string | UnorderedListOptions,
-  ...items: string[]
+  options: UnorderedListOptions,
+  items: string[]
+): string;
+
+export function unorderedList(
+  ...itemOrOptions:
+    | [string?, ...string[]]
+    | [string[]]
+    | [UnorderedListOptions, string[]]
+    | [UnorderedListOptions, ...string[]]
 ): string {
-  const level =
-    typeof itemOrOptions === 'string' ? 0 : (itemOrOptions?.level ?? 1) - 1;
-  if (typeof itemOrOptions === 'string') {
-    items.unshift(itemOrOptions);
-  }
+  const [first, ...rest] = itemOrOptions;
+
+  const items: string[] =
+    // Could be Sig 2, 3, or 4
+    typeof first === 'object'
+      ? Array.isArray(first)
+        ? // Is sig 2.
+          first
+        : // Is sig 3 or 4.
+          rest.flat()
+      : // Is sig 1.
+      first
+      ? [first, ...rest.flat()]
+      : [];
+
+  const options: UnorderedListOptions =
+    typeof first === 'object' && !Array.isArray(first) ? first : {};
+
+  const level = (options?.level ?? 1) - 1;
   return lines(items.map((i) => `${'\t'.repeat(level)}- ${i}`));
 }
+export const ul = unorderedList;
 
-export function orderedList(item: string, ...items: string[]): string;
+export function orderedList(...items: string[]): string;
+export function orderedList(items: string[]): string;
 export function orderedList(
   options: OrderedListOptions,
   ...items: string[]
 ): string;
 export function orderedList(
-  itemOrOptions: string | OrderedListOptions,
-  ...items: string[]
+  options: OrderedListOptions,
+  items: string[]
+): string;
+export function orderedList(
+  ...itemOrOptions:
+    | [string?, ...string[]]
+    | [string[]]
+    | [OrderedListOptions, string[]]
+    | [OrderedListOptions, ...string[]]
 ): string {
-  const level =
-    typeof itemOrOptions === 'string' ? 0 : (itemOrOptions?.level ?? 1) - 1;
-  const startIdx =
-    typeof itemOrOptions === 'string' ? 1 : itemOrOptions?.startIdx ?? 1;
-  if (typeof itemOrOptions === 'string') {
-    items.unshift(itemOrOptions);
-  }
+  const [first, ...rest] = itemOrOptions;
+
+  const items: string[] =
+    // Could be Sig 2, 3, or 4
+    typeof first === 'object'
+      ? Array.isArray(first)
+        ? // Is sig 2.
+          first
+        : // Is sig 3 or 4.
+          rest.flat()
+      : // Is sig 1.
+      first
+      ? [first, ...rest.flat()]
+      : [];
+  const options: OrderedListOptions =
+    typeof first === 'object' && !Array.isArray(first) ? first : {};
+  const level = (options.level ?? 1) - 1;
+  const startIdx = options?.startIdx ?? 1;
+
   return lines(
     items.map((i, idx) => `${'\t'.repeat(level)}${startIdx + idx}. ${i}`)
   );
 }
+export const ol = orderedList;
 
 export function lines(...ls: (string[] | string)[]) {
   return ls.flat().join('\n\n');

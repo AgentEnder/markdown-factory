@@ -8,9 +8,11 @@ import {
   h4,
   h5,
   h6,
+  ol,
   stripIndents,
   table,
   tableOfContents,
+  ul,
 } from './markdown';
 
 describe('markdown', () => {
@@ -319,20 +321,120 @@ This is a multiline blockquote`);
 
     it('should error for invalid heading levels', () => {
       expect(() => h(7, 'Hello World')).toThrowErrorMatchingInlineSnapshot(
-      `
+        `
         "Most markdown engines only support heading levels 1-6.
         If you are targetting an environment where this is known to be supported, please open an issue.
         As a temporary bypass, you can set MARKDOWN_FACTORY_NO_CHECKS=true to disable checks."
-      `);
-      expect(() => h(0, 'Hello World')).toThrowErrorMatchingInlineSnapshot(
       `
+      );
+      expect(() => h(0, 'Hello World')).toThrowErrorMatchingInlineSnapshot(
+        `
         "Heading level must be >= 1.
         If you are targetting an environment where this is known to be supported, please open an issue.
         As a temporary bypass, you can set MARKDOWN_FACTORY_NO_CHECKS=true to disable checks."
-      `);
+      `
+      );
       process.env['MARKDOWN_FACTORY_NO_CHECKS'] = 'true';
       expect(() => h(7, 'Hello World')).not.toThrow();
       delete process.env['MARKDOWN_FACTORY_NO_CHECKS'];
+    });
+  });
+
+  describe('unordered lists', () => {
+    it('should support singular element', () => {
+      expect(ul('Hello World')).toMatchInlineSnapshot(`
+        "- Hello World"
+      `);
+    });
+
+    it('should accept simple arrays', () => {
+      expect(ul(['a', 'b', 'c'])).toMatchInlineSnapshot(`
+        "- a
+
+        - b
+
+        - c"
+        `);
+    });
+
+    it('should accept spread arrays', () => {
+      expect(ul('a', 'b', 'c')).toMatchInlineSnapshot(`
+        "- a
+
+        - b
+
+        - c"
+        `);
+    });
+
+    it('should obey level for simple arrays', () => {
+      expect(ul({ level: 2 }, ['a', 'b', 'c'])).toMatchInlineSnapshot(`
+        "	- a
+
+        	- b
+
+        	- c"
+        `);
+    });
+
+    it('should obey level for spread arrays', () => {
+      expect(ul({ level: 2 }, 'a', 'b', 'c')).toMatchInlineSnapshot(`
+        "	- a
+
+        	- b
+
+        	- c"
+        `);
+    });
+  });
+
+  describe('ordered lists', () => {
+    it('should support singular element', () => {
+      expect(ol('Hello World')).toMatchInlineSnapshot(`
+        "1. Hello World"
+      `);
+    });
+
+    it('should accept simple arrays', () => {
+      expect(ol(['a', 'b', 'c'])).toMatchInlineSnapshot(`
+        "1. a
+
+        2. b
+
+        3. c"
+        `);
+    });
+
+    it('should accept spread arrays', () => {
+      expect(ol('a', 'b', 'c')).toMatchInlineSnapshot(`
+        "1. a
+
+        2. b
+
+        3. c"
+        `);
+    });
+
+    it('should obey options for simple arrays', () => {
+      expect(ol({ level: 2, startIdx: 2 }, ['a', 'b', 'c']))
+        .toMatchInlineSnapshot(`
+        "	2. a
+
+        	3. b
+
+        	4. c"
+        `);
+    });
+
+    it('should obey options for spread arrays', () => {
+      expect(ol({ level: 2, startIdx: 2 }, 'a', 'b', 'c'))
+        .toMatchInlineSnapshot(`
+        "	2. a
+
+        	3. b
+
+        	4. c"
+        `);
     });
   });
 });
