@@ -1,5 +1,5 @@
 {
-  "name": "markdown-utils",
+  "name": "@markdown-factory/source",
   "version": "0.0.0",
   "license": "Apache-2.0",
   "scripts": {
@@ -8,7 +8,7 @@
   "private": true,
   "homepage": "https://github.com/agentender/markdown-factory#readme",
   "bugs": {
-    "url" : "https://github.com/agentender/markdown-factory/issues"
+    "url": "https://github.com/agentender/markdown-factory/issues"
   },
   "author": {
     "name": "Craigory Coppola",
@@ -19,7 +19,8 @@
     "url": "https://github.com/agentender/markdown-factory.git"
   },
   "dependencies": {
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "yaml": "^2.5.0"
   },
   "devDependencies": {
     "@nrwl/eslint-plugin-nx": "15.8.7",

@@ -1,6 +1,7 @@
 import {
   blockQuote,
   codeBlock,
+  frontMatter,
   h,
   h1,
   h2,
@@ -435,6 +436,63 @@ This is a multiline blockquote`);
 
         	4. c"
         `);
+    });
+  });
+
+  describe('frontMatter', () => {
+    const data = {
+      title: 'Hello World',
+      objectProperty: { a: 1, b: 2 },
+      multiline: 'Hello\nWorld',
+      list: ['a', 'b', 'c'],
+      bool: true,
+    };
+
+    it('should handle valid yaml front matter', () => {
+      const result = frontMatter(data, 'yaml');
+      expect(result).toMatchInlineSnapshot(`
+        "---
+
+        title: Hello World
+        objectProperty:
+          a: 1
+          b: 2
+        multiline: |-
+          Hello
+          World
+        list:
+          - a
+          - b
+          - c
+        bool: true
+
+
+        ---"
+      `);
+    });
+
+    it('should handle valid json front matter', () => {
+      const result = frontMatter(data, 'json');
+      expect(result).toMatchInlineSnapshot(`
+        "---
+
+        {
+          \\"title\\": \\"Hello World\\",
+          \\"objectProperty\\": {
+            \\"a\\": 1,
+            \\"b\\": 2
+          },
+          \\"multiline\\": \\"Hello\\\\nWorld\\",
+          \\"list\\": [
+            \\"a\\",
+            \\"b\\",
+            \\"c\\"
+          ],
+          \\"bool\\": true
+        }
+
+        ---"
+      `);
     });
   });
 });

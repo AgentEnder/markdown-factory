@@ -13,7 +13,11 @@
   "targetDefaults": {
     "build": {
       "dependsOn": ["build-base"],
-      "inputs": ["production", "^production", "{workspaceRoot}/tools/build-steps/**"]
+      "inputs": [
+        "production",
+        "^production",
+        "{workspaceRoot}/tools/build-steps/**"
+      ]
     },
     "build-base": {
       "dependsOn": ["^build-base"],

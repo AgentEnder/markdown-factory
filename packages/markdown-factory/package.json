@@ -1,5 +1,13 @@
 {
   "name": "markdown-factory",
-  "version": "0.0.5",
-  "type": "commonjs"
+  "version": "*",
+  "type": "commonjs",
+  "peerDependencies": {
+    "yaml": "2.5.0"
+  },
+  "peerDependenciesMeta": {
+    "yaml": {
+      "optional": true
+    }
+  }
 }

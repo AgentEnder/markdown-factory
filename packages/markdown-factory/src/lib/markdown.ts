@@ -326,6 +326,34 @@ export function tableOfContents(maxDepth: number, ...s: string[]) {
   );
 }
 
+export function frontMatter(
+  metadata: Record<string, unknown>,
+  format: 'json' | 'yaml' = 'yaml'
+): string {
+  switch (format) {
+    case 'json':
+      return jsonFrontMatter(metadata);
+    case 'yaml':
+      return yamlFrontMatter(metadata);
+  }
+}
+
+function jsonFrontMatter(metadata: Record<string, unknown>): string {
+  return lines('---', JSON.stringify(metadata, null, 2), '---');
+}
+
+function yamlFrontMatter(metadata: Record<string, unknown>): string {
+  let yaml: typeof import('yaml');
+  try {
+    yaml = require('yaml');
+  } catch {
+    throw new Error(
+      'The frontMatter function requires the yaml package to be installed. Either install it or build frontmatter using `lines` directly'
+    );
+  }
+  return lines('---', yaml.stringify(metadata), '---');
+}
+
 /**
  * Removes indents, which is useful for printing warning and messages.
  *
