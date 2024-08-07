@@ -3,9 +3,10 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "packages/markdown-factory/src",
   "projectType": "library",
+  "tags": [],
   "targets": {
     "build-base": {
-      "executor": "@nrwl/js:tsc",
+      "executor": "@nx/js:tsc",
       "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/packages/markdown-factory",
@@ -19,15 +20,11 @@
       "command": "ts-node --project ./tsconfig.base.json ./tools/extra-build-step.ts --project markdown-factory --targetName build-base"
     },
     "lint": {
-      "executor": "@nrwl/linter:eslint",
-      "outputs": ["{options.outputFile}"],
-      "options": {
-        "lintFilePatterns": ["packages/markdown-factory/**/*.ts"]
-      }
+      "executor": "@nx/eslint:lint"
     },
     "test": {
-      "executor": "@nrwl/vite:test",
-      "outputs": ["coverage/packages/markdown-factory"],
+      "executor": "@nx/vite:test",
+      "outputs": ["{workspaceRoot}/coverage/packages/markdown-factory"],
       "options": {
         "passWithNoTests": true,
         "reportsDirectory": "../../coverage/packages/markdown-factory"
@@ -40,6 +37,5 @@
         "commands": ["npm publish dist/packages/markdown-factory"]
       }
     }
-  },
-  "tags": []
+  }
 }
