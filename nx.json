@@ -26,6 +26,11 @@
         "{workspaceRoot}/.eslintignore"
       ],
       "cache": true
+    },
+    "nx-release-publish": {
+      "options": {
+        "packageRoot": "dist/{projectRoot}"
+      }
     }
   },
   "namedInputs": {
@@ -45,5 +50,24 @@
     "libsDir": "packages"
   },
   "nxCloudAccessToken": "ZWJjYWUyYzQtYzhjNC00NjU2LWFkZTUtZGRkNDMxMzMwMzAzfHJlYWQtd3JpdGU=",
-  "useInferencePlugins": false
+  "useInferencePlugins": false,
+  "release": {
+    "version": {
+      "conventionalCommits": true,
+      "preVersionCommand": "nx run-many --target=build",
+      "generatorOptions": {
+        "packageRoot": "dist/{projectRoot}",
+        "fallbackCurrentVersionResolver": "registry"
+      }
+    },
+    "changelog": {
+      "workspaceChangelog": {
+        "createRelease": "github"
+      }
+    },
+    "git": {
+      "commitMessage": "chore(release): release {version} [skip ci]"
+    }
+  },
+  "bust": 1
 }
