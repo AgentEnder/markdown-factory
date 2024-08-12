@@ -18,6 +18,10 @@
     "type": "git",
     "url": "https://github.com/AgentEnder/markdown-factory"
   },
+  "workspaces": [
+    ".",
+    "./docs-site"
+  ],
   "dependencies": {
     "tslib": "^2.3.0",
     "yaml": "^2.5.0"
