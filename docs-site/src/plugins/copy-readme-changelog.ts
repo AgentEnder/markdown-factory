@@ -5,7 +5,9 @@ import { join } from 'node:path';
 import { stringify } from 'yaml';
 
 export async function CopyReadmeAndChangelogPlugin(context: LoadContext) {
-  const readme = readFileSync(join(workspaceRoot, './README.md'), 'utf-8');
+  const readme = removeTocFromReadme(
+    readFileSync(join(workspaceRoot, './README.md'), 'utf-8')
+  );
   const changelog = readFileSync(
     join(workspaceRoot, './CHANGELOG.md'),
     'utf-8'
@@ -36,6 +38,15 @@ export async function CopyReadmeAndChangelogPlugin(context: LoadContext) {
     // a unique name for this plugin
     name: 'copy-readme-and-changelog-plugin',
   };
+}
+
+function removeTocFromReadme(contents: string) {
+  const lines = contents.split('\n');
+  let line = lines.shift();
+  while (line !== null && !line.startsWith('# ')) {
+    line = lines.shift();
+  }
+  return [line, ...lines].join('\n');
 }
 
 function addFrontMatter(

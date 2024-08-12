@@ -1,36 +1,36 @@
 1. [Markdown Factory](#markdown-factory)
 
-	1. [Why?](#why)
+   1. [Why?](#why)
 
-	2. [Getting Started](#getting-started)
+   2. [Getting Started](#getting-started)
 
-		1. [Installation](#installation)
+      1. [Installation](#installation)
 
-		2. [Usage](#usage)
+      2. [Usage](#usage)
 
-	3. [Examples](#examples)
+   3. [Examples](#examples)
 
-	4. [API](#api)
+   4. [API](#api)
 
-		1. [Headers](#headers)
+      1. [Headers](#headers)
 
-		2. [`link`](#link)
+      2. [`link`](#link)
 
-		3. [`linkToHeader`](#linktoheader)
+      3. [`linkToHeader`](#linktoheader)
 
-		4. [`table`](#table)
+      4. [`table`](#table)
 
-		5. [`tableOfContents`](#tableofcontents)
+      5. [`tableOfContents`](#tableofcontents)
 
-		6. [`codeBlock`](#codeblock)
+      6. [`codeBlock`](#codeblock)
 
-		7. [`stripIndents`](#stripindents)
+      7. [`stripIndents`](#stripindents)
 
-		8. [`blockQuote`](#blockquote)
+      8. [`blockQuote`](#blockquote)
 
-		9. [`orderedList`](#orderedlist)
+      9. [`orderedList`](#orderedlist)
 
-		10. [`unorderedList`](#unorderedlist)
+      10. [`unorderedList`](#unorderedlist)
 
 # Markdown Factory
 
@@ -38,7 +38,7 @@ Utilities to easily generate valid markdown from within JavaScript
 
 ## Why?
 
-For static content, this library is **mostly** unnecessary. However, when generating a report from a dynamic data source this library can be rather useful. 
+For static content, this library is **mostly** unnecessary. However, when generating a report from a dynamic data source this library can be rather useful.
 
 An example of using this library for dynamic data, could be the implementation of the `tableOfContents` function. Inside it, we parse the headings and then use the utils to generate an appropriate table of contents. You can read more about it here: [`tableOfContents`](#tableofcontents)
 
@@ -54,16 +54,16 @@ Import the functions you need from markdown-factory, they are named based on the
 
 ```typescript
 import { h1, h2, h3 } from 'markdown-factory';
-h1('Hello World', h2('subheading', h3('sub-subheading', 'foo-bar')))
+h1('Hello World', h2('subheading', h3('sub-subheading', 'foo-bar')));
 ```
 
 ## Examples
 
 Some advanced usages of the library can be found below:
 
-- The [`generate-readme`](./tools/generate-readme.ts) script generates this document
+- The [`generate-readme`](https://github.com/agentender/markdown-factory/tree/main/tools/generate-readme.ts) script generates this document
 
-- The [implementation file](./packages/markdown-factory/src/lib/markdown.ts) for this library contains `tableOfContents` which dynamically composes several of these utility functions.
+- The [implementation file](https://github.com/agentender/markdown-factory/tree/main/packages/markdown-factory/src/lib/markdown.ts) for this library contains `tableOfContents` which dynamically composes several of these utility functions.
 
 ## API
 
@@ -72,11 +72,7 @@ Some advanced usages of the library can be found below:
 Headers are generated using the `h1`, `h2`, `h3`, `h4`, `h5`, and `h6` functions. For example, a document with a title and 3 subsections could be generated like this:
 
 ```typescript
-h1('Title', 
-  h2('Section 1', h3('Subsection 1', 'foo')), 
-  h2('Section 2', h3('Subsection 2', 'bar')), 
-  h2('Section 3', h3('Subsection 3', 'baz'))
-)
+h1('Title', h2('Section 1', h3('Subsection 1', 'foo')), h2('Section 2', h3('Subsection 2', 'bar')), h2('Section 3', h3('Subsection 3', 'baz')));
 ```
 
 ### `link`
@@ -84,7 +80,7 @@ h1('Title',
 A link can be generated using the `link` function. It takes a url and optionally a label as arguments.
 
 ```typescript
-link("https://google.com", "Google")
+link('https://google.com', 'Google');
 ```
 
 ### `linkToHeader`
@@ -94,7 +90,7 @@ A link to a header can be generated using the `linkToHeader` function. It takes 
 This differs from `link` in that the contents of the ref are sanitized and parsed from header text first. This involves removing all non-alphanumeric characters, and replacing spaces with dashes. If this doesn't suit your use case, you should use `link` directly instead.
 
 ```typescript
-linkToHeader("Resources!", "More Resources and Information")
+linkToHeader('Resources!', 'More Resources and Information');
 ```
 
 ```markdown
@@ -114,15 +110,17 @@ One of the more useful functions in this library is the `table` function. It tak
 These can be mixed and matched within the `fields` array as needed. For example, if you needed to relabel 1 field, and map another, you could do the following:
 
 ```typescript
-table(items, [ {
-  label: "First Name", 
-  field: "name" 
-}, 
-"age", 
-{ 
-  label: "City", 
-  mapFn: (item) => item.address.city 
-}]);
+table(items, [
+  {
+    label: 'First Name',
+    field: 'name',
+  },
+  'age',
+  {
+    label: 'City',
+    mapFn: (item) => item.address.city,
+  },
+]);
 ```
 
 ### `tableOfContents`
@@ -131,12 +129,19 @@ The `tableOfContents` function takes a depth and the contents that it should cov
 
 ```markdown
 # Title
+
 ## Section 1
+
 ### Subsection 1
+
 ### Subsection 2
+
 ## Section 2
+
 ### Subsection 3
+
 #### Subsubsection 1
+
 ### Subsection 4
 ```
 
@@ -170,16 +175,19 @@ codeBlock('const foo = "bar";', 'typescript');
 
 ### `stripIndents`
 
-The `stripIndents` function is rather unique in terms of this libraries functions. It doesn	 directly correlate to a markdown element, but is rather a utility function that strips leading whitespace from each line of a string. This doesn't affect the rendered markdown, but can be useful when writing code in a template string. For example, we can write this:
+The `stripIndents` function is rather unique in terms of this libraries functions. It doesn directly correlate to a markdown element, but is rather a utility function that strips leading whitespace from each line of a string. This doesn't affect the rendered markdown, but can be useful when writing code in a template string. For example, we can write this:
 
 ```typescript
 import { codeBlock, stripIndents } from 'markdown-factory';
-if(someCondition) {
-  if(someOtherCondition) {
-    codeBlock(stripIndents`
+if (someCondition) {
+  if (someOtherCondition) {
+    codeBlock(
+      stripIndents`
       const foo = "bar";
       const baz = "qux";
-    `, 'typescript');
+    `,
+      'typescript'
+    );
   }
 }
 ```
@@ -188,10 +196,13 @@ Instead of this:
 
 ```typescript
 import { codeBlock } from 'markdown-factory';
-if(someCondition) {
-  if(someOtherCondition) {
-    codeBlock(`const foo = "bar";
-const baz = "qux";`, 'typescript');
+if (someCondition) {
+  if (someOtherCondition) {
+    codeBlock(
+      `const foo = "bar";
+const baz = "qux";`,
+      'typescript'
+    );
   }
 }
 ```
@@ -211,16 +222,7 @@ The `orderedList` function takes a list of strings to render as an ordered list.
 
 ```typescript
 import { h1, orderedList } from 'markdown-factory';
-h1('Sandwich Recipe', orderedList(
-  'Slice bread',
-  'Spread mayo',
-  'Add lettuce',
-  'Add tomato',
-  'Add cheese',
-  'Add meat',
-  'Add condiments',
-  'Eat'
-));
+h1('Sandwich Recipe', orderedList('Slice bread', 'Spread mayo', 'Add lettuce', 'Add tomato', 'Add cheese', 'Add meat', 'Add condiments', 'Eat'));
 ```
 
 You can also pass an options object as the first argument to the `orderedList` function. The options object can contain the following properties:
@@ -235,11 +237,11 @@ For example, the following code would produce a nested list that starts at 3:
 import { h1, orderedList } from 'markdown-factory';
 h1('Sandwich Recipe', orderedList(
   lines(
-    'Slice bread', 
+    'Slice bread',
     orderedList(
-      {startIdx: 3, level: 2}, 
-      'Grab knife', 
-      'Cut bread', 
+      {startIdx: 3, level: 2},
+      'Grab knife',
+      'Cut bread',
       'Place on plate'
     )
   ),
@@ -251,13 +253,13 @@ h1('Sandwich Recipe', orderedList(
 >
 > ```markdown
 > # List 1
-> 
+>
 > 1. Item 1
 > 2. Item 2
 > 3. Item 3
-> 
+>
 > # List 2
-> 
+>
 > 1. Item 1
 > 1. Item 2
 > 1. Item 3
@@ -269,15 +271,7 @@ The `unorderedList` function takes a list of strings to render as an unordered l
 
 ```typescript
 import { h1, unorderedList } from 'markdown-factory';
-h1('Sandwich Ingredients', unorderedList(
-  'Bread',
-  'Mayo',
-  'Lettuce',
-  'Tomato',
-  'Cheese',
-  'Meat',
-  'Condiments'
-));
+h1('Sandwich Ingredients', unorderedList('Bread', 'Mayo', 'Lettuce', 'Tomato', 'Cheese', 'Meat', 'Condiments'));
 ```
 
 You can also pass an options object as the first argument to the `unorderedList` function. The options object can contain the following properties:
@@ -292,11 +286,11 @@ h1('Sandwich Ingredients', unorderedList(
   'Bread',
   'Ham',
   lines(
-    'Condiments', 
+    'Condiments',
     unorderedList(
-      { level: 2 }, 
-      'Ketchup', 
-      'Mayo', 
+      { level: 2 },
+      'Ketchup',
+      'Mayo',
       'Mustard'
     )
   ),

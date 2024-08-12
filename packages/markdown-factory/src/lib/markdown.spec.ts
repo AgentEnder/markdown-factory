@@ -452,7 +452,6 @@ This is a multiline blockquote`);
       const result = frontMatter(data, 'yaml');
       expect(result).toMatchInlineSnapshot(`
         "---
-
         title: Hello World
         objectProperty:
           a: 1
@@ -466,7 +465,6 @@ This is a multiline blockquote`);
           - c
         bool: true
 
-
         ---"
       `);
     });
@@ -475,7 +473,6 @@ This is a multiline blockquote`);
       const result = frontMatter(data, 'json');
       expect(result).toMatchInlineSnapshot(`
         "---
-
         {
           "title": "Hello World",
           "objectProperty": {
@@ -490,7 +487,6 @@ This is a multiline blockquote`);
           ],
           "bool": true
         }
-
         ---"
       `);
     });
