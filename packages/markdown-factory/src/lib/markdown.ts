@@ -339,7 +339,7 @@ export function frontMatter(
 }
 
 function jsonFrontMatter(metadata: Record<string, unknown>): string {
-  return lines('---', JSON.stringify(metadata, null, 2), '---');
+  return ['---', JSON.stringify(metadata, null, 2), '---'].join('\n');
 }
 
 function yamlFrontMatter(metadata: Record<string, unknown>): string {
@@ -351,7 +351,7 @@ function yamlFrontMatter(metadata: Record<string, unknown>): string {
       'The frontMatter function requires the yaml package to be installed. Either install it or build frontmatter using `lines` directly'
     );
   }
-  return lines('---', yaml.stringify(metadata), '---');
+  return ['---', yaml.stringify(metadata), '---'].join('\n');
 }
 
 /**
