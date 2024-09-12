@@ -124,6 +124,12 @@ const config: Config = {
       ],
       copyright: `Copyright © ${new Date().getFullYear()} AgentEnder. Built with Docusaurus.`,
     },
+    algolia: {
+      apiKey: '4a8c8ce8b233c69874600a7f0fa62a69',
+      indexName: 'craigory',
+      contextualSearch: false,
+      appId: 'B3Z1OJM9K7',
+    },
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
