@@ -1,6 +1,6 @@
-import * as defaultMarkdown from '../markdown';
+import * as defaultMarkdown from '../markdown.js';
 
-export const slackMrkdwn: typeof import('../markdown') = {
+export const slackMrkdwn: typeof import('../markdown.js') = {
   ...defaultMarkdown,
   link: (ref: string, title?: string) =>
     title ? `<${ref}|${title}>` : `<${ref}/>`,

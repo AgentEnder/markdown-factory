@@ -6,13 +6,10 @@
   "tags": [],
   "targets": {
     "build-base": {
-      "executor": "@nx/js:tsc",
-      "outputs": ["{options.outputPath}"],
+      "command": "tsdown --config packages/markdown-factory/tsdown.config.ts",
+      "outputs": ["{workspaceRoot}/dist/packages/markdown-factory"],
       "options": {
-        "outputPath": "dist/packages/markdown-factory",
-        "main": "packages/markdown-factory/src/index.ts",
-        "tsConfig": "packages/markdown-factory/tsconfig.lib.json",
-        "assets": ["packages/markdown-factory/*.md"]
+        "outputPath": "dist/packages/markdown-factory"
       }
     },
     "build": {

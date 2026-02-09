@@ -52,6 +52,7 @@
     "prettier": "^2.6.2",
     "ts-jest": "29.1.5",
     "ts-node": "^10.9.1",
+    "tsdown": "^0.20.3",
     "typescript": "5.5.4",
     "vite": "5.3.5",
     "vite-plugin-eslint": "^1.8.1",
