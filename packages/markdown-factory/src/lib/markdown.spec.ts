@@ -448,8 +448,8 @@ This is a multiline blockquote`);
       bool: true,
     };
 
-    it('should handle valid yaml front matter', () => {
-      const result = frontMatter(data, 'yaml');
+    it('should handle valid yaml front matter', async () => {
+      const result = await frontMatter(data, 'yaml');
       expect(result).toMatchInlineSnapshot(`
         "---
         title: Hello World
@@ -469,8 +469,8 @@ This is a multiline blockquote`);
       `);
     });
 
-    it('should handle valid json front matter', () => {
-      const result = frontMatter(data, 'json');
+    it('should handle valid json front matter', async () => {
+      const result = await frontMatter(data, 'json');
       expect(result).toMatchInlineSnapshot(`
         "---
         {

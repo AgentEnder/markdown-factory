@@ -806,10 +806,10 @@ export function tableOfContents(maxDepth: number, ...s: string[]) {
  * @param metadata The metadata to include in the front matter.
  * @param format The format to output the front matter in. Defaults to 'yaml'.
  */
-export function frontMatter(
+export async function frontMatter(
   metadata: Record<string, unknown>,
   format: 'json' | 'yaml' = 'yaml'
-): string {
+): Promise<string> {
   switch (format) {
     case 'json':
       return jsonFrontMatter(metadata);
@@ -823,10 +823,10 @@ function jsonFrontMatter(metadata: Record<string, unknown>): string {
   return ['---', JSON.stringify(metadata, null, 2), '---'].join('\n');
 }
 
-function yamlFrontMatter(metadata: Record<string, unknown>): string {
+async function yamlFrontMatter(metadata: Record<string, unknown>): Promise<string> {
   let yaml: typeof import('yaml');
   try {
-    yaml = require('yaml');
+    yaml = await import('yaml');
   } catch {
     throw new Error(
       'The frontMatter function requires the yaml package to be installed. Either install it or build frontmatter using `lines` directly'
