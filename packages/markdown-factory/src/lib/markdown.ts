@@ -823,7 +823,9 @@ function jsonFrontMatter(metadata: Record<string, unknown>): string {
   return ['---', JSON.stringify(metadata, null, 2), '---'].join('\n');
 }
 
-async function yamlFrontMatter(metadata: Record<string, unknown>): Promise<string> {
+async function yamlFrontMatter(
+  metadata: Record<string, unknown>
+): Promise<string> {
   let yaml: typeof import('yaml');
   try {
     yaml = await import('yaml');
@@ -867,11 +869,31 @@ export function stripIndents(
     .trim();
 }
 
+function getSafeEnv(): Record<string, string | undefined> {
+  try {
+    if (typeof process !== 'undefined' && process.env) {
+      return process.env;
+    } else if (
+      // @ts-expect-error the typings to support both would be weird here
+      typeof import.meta !== 'undefined' &&
+      // @ts-expect-error the typings to support both would be weird here
+      typeof import.meta.env !== 'undefined'
+    ) {
+      // @ts-expect-error the typings to support both would be weird here
+      return import.meta.env;
+    }
+  } catch {
+    // noop
+  }
+  return {};
+}
+
 function assert(check: boolean, message: `${string}.`, allowByPass = true) {
+  const env = getSafeEnv();
   const bypassChecks =
     allowByPass &&
-    (process.env['MARKDOWN_FACTORY_NO_CHECKS'] === 'true' ||
-      process.env['NODE_ENV'] === 'production');
+    (env['MARKDOWN_FACTORY_NO_CHECKS'] === 'true' ||
+      env['NODE_ENV'] === 'production');
   if (!check && !bypassChecks) {
     const lines: string[] = [
       message,
