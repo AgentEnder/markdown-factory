@@ -18,6 +18,9 @@ jobs:
         with:
           node-version: 22
 
+      - name: Bump NPM version
+        run: npm i -g npm@11
+
       - name: Install dependencies
         run: npm ci
 
