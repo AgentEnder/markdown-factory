@@ -205,10 +205,21 @@ export function code(contents: string) {
  * Function to create a code block.
  * @param contents The code to include in the block.
  * @param language The language the code is written in.
+ * @param attributes Optional key-value attributes to include in the code fence (e.g. `{ title: "app.ts" }` renders as ` ```ts title="app.ts" `).
  * @returns Markdown code block.
  */
-export function codeBlock(contents: string, language?: string) {
-  return `\`\`\`${language ? language : ''}
+export function codeBlock(
+  contents: string,
+  language?: string,
+  attributes?: Record<string, string>
+) {
+  const attrs = attributes
+    ? ' ' +
+      Object.entries(attributes)
+        .map(([key, value]) => `${key}="${value}"`)
+        .join(' ')
+    : '';
+  return `\`\`\`${language ?? ''}${attrs}
 ${contents}
 \`\`\``;
 }

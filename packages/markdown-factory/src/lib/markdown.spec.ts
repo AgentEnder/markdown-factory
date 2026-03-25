@@ -90,6 +90,50 @@ This is a multiline blockquote`);
     });
   });
 
+  describe('codeBlock', () => {
+    it('should create a code block without language', () => {
+      const result = codeBlock('const x = 1;');
+      expect(result).toEqual(`\`\`\`
+const x = 1;
+\`\`\``);
+    });
+
+    it('should create a code block with a language', () => {
+      const result = codeBlock('const x = 1;', 'typescript');
+      expect(result).toEqual(`\`\`\`typescript
+const x = 1;
+\`\`\``);
+    });
+
+    it('should create a code block with attributes', () => {
+      const result = codeBlock('const x = 1;', 'ts', {
+        title: 'example.ts',
+      });
+      expect(result).toEqual(`\`\`\`ts title="example.ts"
+const x = 1;
+\`\`\``);
+    });
+
+    it('should create a code block with multiple attributes', () => {
+      const result = codeBlock('const x = 1;', 'ts', {
+        title: 'example.ts',
+        lines: '1,3-5',
+      });
+      expect(result).toEqual(`\`\`\`ts title="example.ts" lines="1,3-5"
+const x = 1;
+\`\`\``);
+    });
+
+    it('should handle attributes without a language', () => {
+      const result = codeBlock('const x = 1;', undefined, {
+        title: 'example.ts',
+      });
+      expect(result).toEqual(`\`\`\` title="example.ts"
+const x = 1;
+\`\`\``);
+    });
+  });
+
   describe('nesting', () => {
     it('should handle nested headers', () => {
       expect(
