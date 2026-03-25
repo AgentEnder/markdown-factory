@@ -1,4 +1,4 @@
-import { ProjectConfiguration } from '@nrwl/devkit';
+import { ProjectConfiguration } from '@nx/devkit';
 import { copyFile } from 'fs/promises';
 import { join } from 'path';
 import type { ExtraBuildStep } from '../../extra-build-step';

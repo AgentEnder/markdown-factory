@@ -14,13 +14,13 @@
     },
     "build": {
       "dependsOn": ["build-base"],
-      "command": "ts-node --project ./tsconfig.base.json ./tools/extra-build-step.ts --project markdown-factory --targetName build-base"
+      "command": "tsx ./tools/extra-build-step.ts --project markdown-factory --targetName build-base"
     },
     "lint": {
       "executor": "@nx/eslint:lint"
     },
     "test": {
-      "executor": "@nx/vite:test",
+      "executor": "@nx/vitest:test",
       "outputs": ["{workspaceRoot}/coverage/packages/markdown-factory"],
       "options": {
         "passWithNoTests": true,

@@ -1,4 +1,4 @@
-import { createProjectGraphAsync, ProjectConfiguration } from '@nrwl/devkit';
+import { createProjectGraphAsync, ProjectConfiguration } from '@nx/devkit';
 import parser from 'yargs-parser';
 
 export type ExtraBuildStepReturnType =
