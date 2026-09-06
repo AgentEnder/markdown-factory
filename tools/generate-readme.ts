@@ -316,7 +316,12 @@ message.asMdast();          // the same content as an mdast tree`,
         'typescript'
       ),
       blockQuote(
-        'Note - `MrkdwnString` extends `String`, so it can be interpolated, concatenated and compared like any other string. It is not the `string` primitive type though, so functions that are typed to accept `string` need `String(value)` (or `value.toString()`).'
+        'Note - `MrkdwnString` extends `String`, so template literals, concatenation, `.length`, every `String` method, `JSON.stringify` and `==` all behave as they always have. It is an object rather than the `string` primitive though, so a few things do differ:',
+        unorderedList(
+          'TypeScript will not assign it to a `string`. Use `String(value)`, or `value.toString()`.',
+          "Strict equality against a string literal (`value === '*foo*'`), `switch (value)`, `array.includes(value)` and `set.has(value)` are all `false`. Use `==`, or convert first.",
+          "`typeof value` is `'object'`, so APIs that check it - `fs.writeFileSync(path, value)`, for instance - need `String(value)`."
+        )
       ),
       h3(
         '`asBlockkitBlocks`',
