@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "license": "Apache-2.0",
   "scripts": {
-    "generate-readme": "ts-node ./tools/generate-readme.ts -p ./tsconfig.base.json"
+    "generate-readme": "tsx ./tools/generate-readme.ts"
   },
   "private": true,
   "homepage": "https://github.com/AgentEnder/markdown-factory#readme",

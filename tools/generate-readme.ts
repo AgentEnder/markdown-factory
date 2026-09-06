@@ -1,5 +1,6 @@
 import { writeFileSync } from 'fs';
 import { join } from 'path';
+import { format, resolveConfig } from 'prettier';
 import {
   blockQuote,
   codeBlock,
@@ -15,7 +16,16 @@ import {
   unorderedList,
 } from '../packages/markdown-factory/src/lib/markdown';
 
-export const contents = tableOfContents(
+const README_PATH = join(__dirname, '../README.md');
+
+/**
+ * Links to a file in the repository. The README is published to npm and to the
+ * docs site, where relative links do not resolve.
+ */
+const repoFile = (path: string) =>
+  `https://github.com/agentender/markdown-factory/tree/main/${path}`;
+
+const document = tableOfContents(
   3,
   h1(
     'Markdown Factory',
@@ -48,11 +58,11 @@ export const contents = tableOfContents(
       'Some advanced usages of the library can be found below:',
       unorderedList(
         `The ${link(
-          './tools/generate-readme.ts',
+          repoFile('tools/generate-readme.ts'),
           '`generate-readme`'
         )} script generates this document`,
         `The ${link(
-          './packages/markdown-factory/src/lib/markdown.ts',
+          repoFile('packages/markdown-factory/src/lib/markdown.ts'),
           'implementation file'
         )} for this library contains \`tableOfContents\` which dynamically composes several of these utility functions.`
       )
@@ -399,6 +409,18 @@ message.asMdast();          // the same content as an mdast tree`,
   )
 );
 
+/**
+ * The generated README, formatted with the repo's prettier config so that it
+ * matches the file on disk exactly. `assertReadmeUnchanged` in the build step
+ * compares against this.
+ */
+export const contents = format(document, {
+  // `editorconfig` matters here: .editorconfig turns off the line length limit
+  // for markdown, which is what keeps the embedded code samples on one line.
+  ...resolveConfig.sync(README_PATH, { editorconfig: true }),
+  parser: 'markdown',
+});
+
 if (require.main === module) {
-  writeFileSync(join(__dirname, '../README.md'), contents);
+  writeFileSync(README_PATH, contents);
 }
