@@ -614,15 +614,17 @@ function toListItem(item: MrkdwnStringLike): ListItemNode {
 }
 
 /**
- * Builds a `tableRow` node from already rendered cell values.
+ * Builds a `tableRow` node from cell values. Values built by this library keep
+ * their AST, so that `asBlockkitBlocks` can render a cell containing a link or
+ * emphasis as a `rich_text` cell rather than as literal mrkdwn.
  */
-function tableRow(cells: string[]): TableRowNode {
+function tableRow(cells: MrkdwnStringLike[]): TableRowNode {
   return {
     type: 'tableRow',
-    mrkdwn: cells.join(' | '),
+    mrkdwn: cells.map(toRaw).join(' | '),
     children: cells.map((cell) => ({
       type: 'tableCell' as const,
-      mrkdwn: cell,
+      mrkdwn: toRaw(cell),
       children: [toNode(cell)],
     })),
   };
@@ -634,17 +636,23 @@ function tableRow(cells: string[]): TableRowNode {
  */
 function normalizeTableField<T extends Record<string, unknown>>(
   field: TableField<T>
-): { label: string; mapFn: (el: T) => string } {
+): { label: string; mapFn: (el: T) => MrkdwnStringLike } {
   return {
     label: typeof field === 'object' ? field.label : String(field),
     mapFn:
       typeof field === 'object' && 'mapFn' in field
-        ? (el: T) => (field as MappedTableField<T>).mapFn(el).toString()
+        ? (el: T) => toCellValue((field as MappedTableField<T>).mapFn(el))
         : (el: T) =>
-            (
-              el[typeof field === 'object' ? field.field : field] as {
-                toString(): string;
-              }
-            ).toString(),
+            toCellValue(el[typeof field === 'object' ? field.field : field]),
   };
+}
+
+/**
+ * Renders a cell value, keeping values built by this library intact so that
+ * their AST survives into the cell.
+ */
+function toCellValue(value: unknown): MrkdwnStringLike {
+  return isMrkdwnString(value)
+    ? value
+    : (value as { toString(): string }).toString();
 }

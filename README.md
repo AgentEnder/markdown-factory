@@ -330,14 +330,15 @@ message.asMdast(); // the same content as an mdast tree
 
 Block Kit has no markdown parser, and only a handful of block types, so the AST is mapped onto the blocks that exist:
 
-| Markdown                      | Block Kit                                                                           |
-| ----------------------------- | ----------------------------------------------------------------------------------- |
-| Headings (depth 1-2)          | A `header` block, with formatting stripped and the text truncated to 150 characters |
-| Headings (depth 3-6)          | A `section` block containing bold text                                              |
-| Paragraphs and inline content | Merged into a single `section` block until the next block level element             |
-| Lists                         | A `section` block, with `•`/numbered bullets and indented sub-lists                 |
-| Code blocks and tables        | A `section` block of preformatted text, so that table columns stay aligned          |
-| Block quotes                  | A `section` block using Slack's `>` quote syntax                                    |
+| Markdown                      | Block Kit                                                                                                                                 |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Headings (depth 1-2)          | A `header` block, with formatting stripped and the text truncated to 150 characters                                                       |
+| Headings (depth 3-6)          | A `section` block containing bold text                                                                                                    |
+| Paragraphs and inline content | Merged into a single `section` block until the next block level element                                                                   |
+| Lists                         | A `section` block, with `•`/numbered bullets and indented sub-lists                                                                       |
+| Code blocks                   | A `rich_text` block containing `rich_text_preformatted`                                                                                   |
+| Tables                        | A `table` block. Cells built with `link`, `bold` and friends become `rich_text` cells, so they stay formatted; plain cells are `raw_text` |
+| Block quotes                  | A `section` block using Slack's `>` quote syntax                                                                                          |
 
 Text longer than Slack's 3000 character section limit is split across several `section` blocks on line boundaries. The defaults can be adjusted per call:
 
@@ -347,8 +348,11 @@ message.asBlockkitBlocks({
   maxSectionLength: 3000, // characters per section block.
   maxHeaderLength: 150, // characters per header block.
   emoji: true, // whether Slack should escape emoji in header blocks.
+  tableBlocks: true, // render tables as `table` blocks.
 });
 ```
+
+> Note - only messages support `table` blocks. Set `tableBlocks: false` when the output is bound for a modal or an App Home tab, and tables fall back to preformatted text. A table Slack would reject - over 100 rows, over 20 columns, or over 10,000 characters of cell content in the message - falls back on its own either way, so the message stays valid.
 
 ### `asMdast`
 

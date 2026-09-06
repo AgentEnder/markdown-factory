@@ -358,9 +358,13 @@ message.asMdast();          // the same content as an mdast tree`,
                 'A `section` block, with `•`/numbered bullets and indented sub-lists',
             },
             {
-              element: 'Code blocks and tables',
+              element: 'Code blocks',
+              output: 'A `rich_text` block containing `rich_text_preformatted`',
+            },
+            {
+              element: 'Tables',
               output:
-                'A `section` block of preformatted text, so that table columns stay aligned',
+                'A `table` block. Cells built with `link`, `bold` and friends become `rich_text` cells, so they stay formatted; plain cells are `raw_text`',
             },
             {
               element: 'Block quotes',
@@ -380,8 +384,12 @@ message.asMdast();          // the same content as an mdast tree`,
             maxSectionLength: 3000, // characters per section block.
             maxHeaderLength: 150, // characters per header block.
             emoji: true, // whether Slack should escape emoji in header blocks.
+            tableBlocks: true, // render tables as \`table\` blocks.
           });`,
           'typescript'
+        ),
+        blockQuote(
+          'Note - only messages support `table` blocks. Set `tableBlocks: false` when the output is bound for a modal or an App Home tab, and tables fall back to preformatted text. A table Slack would reject - over 100 rows, over 20 columns, or over 10,000 characters of cell content in the message - falls back on its own either way, so the message stays valid.'
         )
       ),
       h3(

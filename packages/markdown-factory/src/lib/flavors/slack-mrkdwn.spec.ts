@@ -244,24 +244,135 @@ describe('slack-mrkdwn', () => {
       ]);
     });
 
-    it('should render code blocks without the language fence', () => {
+    it('should render code blocks as rich_text_preformatted', () => {
       expect(codeBlock('const a = 1;', 'ts').asBlockkitBlocks()).toEqual([
         {
-          type: 'section',
-          text: { type: 'mrkdwn', text: '```\nconst a = 1;\n```' },
+          type: 'rich_text',
+          elements: [
+            {
+              type: 'rich_text_preformatted',
+              elements: [{ type: 'text', text: 'const a = 1;' }],
+            },
+          ],
         },
       ]);
     });
 
-    it('should render tables as preformatted text', () => {
-      const result = table([{ name: 'A' }], ['name']);
-      expect(result.asBlockkitBlocks()).toEqual([
+    it('should render tables as table blocks, with the header row first', () => {
+      expect(
+        table([{ name: 'A', age: 1 }], ['name', 'age']).asBlockkitBlocks()
+      ).toEqual([
         {
-          type: 'section',
-          text: {
-            type: 'mrkdwn',
-            text: `\`\`\`\n${result.toString()}\n\`\`\``,
-          },
+          type: 'table',
+          rows: [
+            [
+              { type: 'raw_text', text: 'name' },
+              { type: 'raw_text', text: 'age' },
+            ],
+            [
+              { type: 'raw_text', text: 'A' },
+              { type: 'raw_text', text: '1' },
+            ],
+          ],
+        },
+      ]);
+    });
+
+    it('should render formatted cells as rich_text cells', () => {
+      const rows = [{ name: 'api', url: 'https://ci.dev/api' }];
+      const blocks = table(rows, [
+        { label: 'Service', mapFn: (row) => bold(row.name) },
+        { label: 'Build', mapFn: (row) => link(row.url, 'passing') },
+        { label: 'Id', mapFn: (row) => code(row.name) },
+      ]).asBlockkitBlocks();
+      expect(blocks[0].type === 'table' && blocks[0].rows[1]).toEqual([
+        {
+          type: 'rich_text',
+          elements: [
+            {
+              type: 'rich_text_section',
+              elements: [{ type: 'text', text: 'api', style: { bold: true } }],
+            },
+          ],
+        },
+        {
+          type: 'rich_text',
+          elements: [
+            {
+              type: 'rich_text_section',
+              elements: [
+                { type: 'link', url: 'https://ci.dev/api', text: 'passing' },
+              ],
+            },
+          ],
+        },
+        {
+          type: 'rich_text',
+          elements: [
+            {
+              type: 'rich_text_section',
+              elements: [{ type: 'text', text: 'api', style: { code: true } }],
+            },
+          ],
+        },
+      ]);
+    });
+
+    it('should never emit an empty raw_text cell', () => {
+      // Slack rejects the whole message when a raw_text cell is empty.
+      const blocks = table([{ name: '' }], ['name']).asBlockkitBlocks();
+      expect(blocks[0].type === 'table' && blocks[0].rows[1]).toEqual([
+        { type: 'raw_text', text: ' ' },
+      ]);
+    });
+
+    it('should fall back to preformatted text when Slack would reject the table', () => {
+      const preformatted = (result: { asBlockkitBlocks(): unknown[] }) =>
+        result.asBlockkitBlocks()[0];
+
+      // More than 100 rows.
+      const manyRows = table(
+        Array.from({ length: 101 }, (_, idx) => ({ name: `row ${idx}` })),
+        ['name']
+      );
+      expect(preformatted(manyRows)).toMatchObject({ type: 'rich_text' });
+
+      // More than 20 columns.
+      const wideRow: Record<string, unknown> = {};
+      for (let idx = 0; idx < 21; idx++) {
+        wideRow[`c${idx}`] = idx;
+      }
+      const manyColumns = table([wideRow], Object.keys(wideRow));
+      expect(preformatted(manyColumns)).toMatchObject({ type: 'rich_text' });
+
+      // More than 10,000 characters of cell content.
+      const hugeCells = table([{ name: 'x'.repeat(10001) }], ['name']);
+      expect(preformatted(hugeCells)).toMatchObject({ type: 'rich_text' });
+    });
+
+    it('should budget table characters across the whole message', () => {
+      const big = () => table([{ name: 'x'.repeat(6000) }], ['name']);
+      const blocks = lines(big(), big()).asBlockkitBlocks();
+      // The first table fits the 10,000 character budget, the second does not
+      // and falls back to preformatted text, chunked by the section limit.
+      expect(blocks[0].type).toEqual('table');
+      expect(blocks.slice(1).map((block) => block.type)).not.toContain('table');
+      expect(blocks.slice(1).every((block) => block.type === 'rich_text')).toBe(
+        true
+      );
+    });
+
+    it('should render tables as preformatted text when table blocks are off', () => {
+      const result = table([{ name: 'A' }], ['name']);
+      expect(result.asBlockkitBlocks({ tableBlocks: false })).toEqual([
+        {
+          type: 'rich_text',
+          elements: [
+            {
+              type: 'rich_text_preformatted',
+              elements: [{ type: 'text', text: result.toString() }],
+            },
+          ],
         },
       ]);
     });
@@ -366,8 +477,13 @@ describe('slack-mrkdwn', () => {
           text: { type: 'plain_text', text: 'Logs', emoji: true },
         },
         {
-          type: 'section',
-          text: { type: 'mrkdwn', text: '```\ndone in 4s\n```' },
+          type: 'rich_text',
+          elements: [
+            {
+              type: 'rich_text_preformatted',
+              elements: [{ type: 'text', text: 'done in 4s' }],
+            },
+          ],
         },
       ]);
     });

@@ -5,7 +5,13 @@
  * @description Rendering of the markdown AST into Slack Block Kit blocks.
  */
 
-import type { AstNode, ListItemNode, ListNode } from './ast.js';
+import type {
+  AstNode,
+  ListItemNode,
+  ListNode,
+  TableCellNode,
+  TableNode,
+} from './ast.js';
 import { toPlainText } from './ast.js';
 
 /**
@@ -50,11 +56,127 @@ export type HeaderBlock = {
 };
 
 /**
+ * The styles a piece of rich text can carry.
+ */
+export type RichTextStyle = {
+  bold?: boolean;
+  italic?: boolean;
+  strike?: boolean;
+  code?: boolean;
+  underline?: boolean;
+};
+
+/**
+ * A run of text within a rich text element.
+ */
+export type RichTextText = {
+  type: 'text';
+  text: string;
+  style?: RichTextStyle;
+};
+
+/**
+ * A link within a rich text element.
+ */
+export type RichTextLink = {
+  type: 'link';
+  url: string;
+  text?: string;
+  style?: RichTextStyle;
+};
+
+/**
+ * The elements that can appear inside a `rich_text_section`.
+ */
+export type RichTextElement = RichTextText | RichTextLink;
+
+/**
+ * A run of inline content within a `rich_text` block.
+ */
+export type RichTextSection = {
+  type: 'rich_text_section';
+  elements: RichTextElement[];
+};
+
+/**
+ * Preformatted (code block) content within a `rich_text` block.
+ */
+export type RichTextPreformatted = {
+  type: 'rich_text_preformatted';
+  elements: RichTextElement[];
+  border?: 0 | 1;
+};
+
+/**
+ * A Slack `rich_text` block.
+ */
+export type RichTextBlock = {
+  type: 'rich_text';
+  elements: (RichTextSection | RichTextPreformatted)[];
+  block_id?: string;
+};
+
+/**
+ * A `raw_text` table cell. Slack requires at least one character.
+ */
+export type RawTextObject = {
+  type: 'raw_text';
+  text: string;
+};
+
+/**
+ * A cell within a table row. Cells carrying formatting are `rich_text`,
+ * everything else is `raw_text`.
+ */
+export type TableCell = RawTextObject | RichTextBlock;
+
+/**
+ * Per column display settings for a `table` block.
+ */
+export type TableColumnSettings = {
+  align?: 'left' | 'center' | 'right';
+  is_wrapped?: boolean;
+};
+
+/**
+ * A Slack `table` block. The first row is rendered as the header.
+ *
+ * Only messages support this block - see
+ * {@link AsBlockkitBlocksOptions.tableBlocks}.
+ */
+export type TableBlock = {
+  type: 'table';
+  rows: TableCell[][];
+  column_settings?: TableColumnSettings[];
+  block_id?: string;
+};
+
+/**
  * The subset of Block Kit blocks that markdown can be rendered into. These are
  * structurally compatible with the `KnownBlock` type from `@slack/types`, so
  * they can be passed directly to `chat.postMessage` and friends.
  */
-export type BlockkitBlock = SectionBlock | HeaderBlock;
+export type BlockkitBlock =
+  | SectionBlock
+  | HeaderBlock
+  | RichTextBlock
+  | TableBlock;
+
+/**
+ * Slack rejects a `table` block with more than 100 rows.
+ */
+const MAX_TABLE_ROWS = 100;
+
+/**
+ * Slack rejects a `table` block with more than 20 cells in a row.
+ */
+const MAX_TABLE_COLUMNS = 20;
+
+/**
+ * Slack rejects a `table` block whose cells hold more than 10,000 characters
+ * in total, and applies the same budget across every table in a message.
+ */
+const MAX_TABLE_CHARACTERS = 10000;
 
 /**
  * Options for {@link renderBlockkitBlocks} / `asBlockkitBlocks`.
@@ -93,6 +215,18 @@ export type AsBlockkitBlocksOptions = {
    * @defaultValue true
    */
   emoji?: boolean;
+  /**
+   * Whether tables are rendered as `table` blocks. Only messages support them,
+   * so set this to `false` when the blocks are destined for a modal or an App
+   * Home tab, and tables will be rendered as preformatted text instead.
+   *
+   * A table that Slack would reject - more than 100 rows, more than 20 columns,
+   * or more than 10,000 characters of cell content in the message - falls back
+   * to preformatted text on its own, whatever this is set to.
+   *
+   * @defaultValue true
+   */
+  tableBlocks?: boolean;
 };
 
 type ResolvedOptions = Required<AsBlockkitBlocksOptions>;
@@ -102,6 +236,7 @@ const DEFAULT_OPTIONS: ResolvedOptions = {
   maxSectionLength: 3000,
   maxHeaderLength: 150,
   emoji: true,
+  tableBlocks: true,
 };
 
 /**
@@ -121,6 +256,9 @@ export function renderBlockkitBlocks(
   // Inline content is buffered so that adjacent inline nodes (e.g. the
   // paragraphs passed to `lines`) end up within a single section block.
   let buffer: string[] = [];
+  // Slack budgets table cell characters across the whole message, not per
+  // table, so it is tracked for the duration of the render.
+  let tableCharacterBudget = MAX_TABLE_CHARACTERS;
 
   function flush() {
     if (buffer.length === 0) {
@@ -137,11 +275,40 @@ export function renderBlockkitBlocks(
     }
   }
 
-  function pushCodeSection(contents: string) {
-    // The fences count against the section limit, so leave room for them.
-    for (const chunk of chunkText(contents, opts.maxSectionLength - 8)) {
-      pushSection('```\n' + chunk + '\n```');
+  function pushPreformatted(contents: string) {
+    for (const chunk of chunkText(contents, opts.maxSectionLength)) {
+      blocks.push({
+        type: 'rich_text',
+        elements: [
+          {
+            type: 'rich_text_preformatted',
+            elements: [{ type: 'text', text: chunk }],
+          },
+        ],
+      });
     }
+  }
+
+  function pushTable(node: TableNode) {
+    const rows = node.children;
+    const columns = Math.max(0, ...rows.map((row) => row.children.length));
+    const characters = tableCharacterCount(node);
+    if (
+      !opts.tableBlocks ||
+      rows.length > MAX_TABLE_ROWS ||
+      columns > MAX_TABLE_COLUMNS ||
+      characters > tableCharacterBudget
+    ) {
+      // Falling back keeps the message valid, and the markdown table is
+      // already aligned for a monospaced font.
+      pushPreformatted(node.mrkdwn);
+      return;
+    }
+    tableCharacterBudget -= characters;
+    blocks.push({
+      type: 'table',
+      rows: rows.map((row) => row.children.map(toTableCell)),
+    });
   }
 
   function visit(node: AstNode) {
@@ -172,13 +339,11 @@ export function renderBlockkitBlocks(
       }
       case 'code':
         flush();
-        pushCodeSection(node.value);
+        pushPreformatted(node.value);
         break;
       case 'table':
         flush();
-        // Block Kit has no table primitive, so the markdown table is rendered
-        // as preformatted text to keep the columns aligned.
-        pushCodeSection(node.mrkdwn);
+        pushTable(node);
         break;
       case 'blockquote':
         flush();
@@ -203,6 +368,91 @@ export function renderBlockkitBlocks(
   visit(node);
   flush();
   return blocks;
+}
+
+/**
+ * Counts the characters Slack bills a table for, which is the content of its
+ * cells rather than the rendered markdown.
+ */
+function tableCharacterCount(node: TableNode): number {
+  return node.children.reduce(
+    (total, row) =>
+      row.children.reduce(
+        (rowTotal, cell) => rowTotal + cell.mrkdwn.length,
+        0
+      ) + total,
+    0
+  );
+}
+
+/**
+ * Converts a table cell into its Block Kit representation. Cells that carry
+ * formatting become `rich_text` so that links and emphasis render; plain cells
+ * become `raw_text`, which Slack shows verbatim.
+ */
+function toTableCell(cell: TableCellNode): TableCell {
+  const [content] = cell.children;
+  if (content && content.type !== 'text') {
+    return {
+      type: 'rich_text',
+      elements: [
+        { type: 'rich_text_section', elements: toRichTextElements(content) },
+      ],
+    };
+  }
+  // Slack rejects a `raw_text` cell with an empty string.
+  return { type: 'raw_text', text: cell.mrkdwn || ' ' };
+}
+
+/**
+ * Converts inline AST content into rich text elements, carrying emphasis down
+ * as Slack style flags. Block level content has no rich text equivalent, so it
+ * falls back to its rendered mrkdwn as plain text.
+ */
+function toRichTextElements(
+  node: AstNode,
+  style: RichTextStyle = {}
+): RichTextElement[] {
+  const withStyle = (extra: RichTextStyle) => ({ ...style, ...extra });
+  const styled = (text: string, applied: RichTextStyle): RichTextElement[] =>
+    text ? [{ type: 'text', text, ...maybeStyle(applied) }] : [];
+
+  switch (node.type) {
+    case 'text':
+      return styled(node.value, style);
+    case 'strong':
+      return node.children.flatMap((child) =>
+        toRichTextElements(child, withStyle({ bold: true }))
+      );
+    case 'emphasis':
+      return node.children.flatMap((child) =>
+        toRichTextElements(child, withStyle({ italic: true }))
+      );
+    case 'delete':
+      return node.children.flatMap((child) =>
+        toRichTextElements(child, withStyle({ strike: true }))
+      );
+    case 'inlineCode':
+      return styled(node.value, withStyle({ code: true }));
+    case 'link':
+      return [
+        {
+          type: 'link',
+          url: node.url,
+          text: toPlainText(node),
+          ...maybeStyle(style),
+        },
+      ];
+    case 'root':
+    case 'tableCell':
+      return node.children.flatMap((child) => toRichTextElements(child, style));
+    default:
+      return styled(node.mrkdwn, style);
+  }
+}
+
+function maybeStyle(style: RichTextStyle): { style?: RichTextStyle } {
+  return Object.keys(style).length ? { style } : {};
 }
 
 /**
