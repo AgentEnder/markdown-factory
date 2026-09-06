@@ -32,6 +32,12 @@
 
       10. [`unorderedList`](#unorderedlist)
 
+   5. [Slack Flavor](#slack-flavor)
+
+      1. [`asBlockkitBlocks`](#asblockkitblocks)
+
+      2. [`asMdast`](#asmdast)
+
 # Markdown Factory
 
 Utilities to easily generate valid markdown from within JavaScript
@@ -297,3 +303,59 @@ h1('Sandwich Ingredients', unorderedList(
   'Spread mayo'
 )
 ```
+
+## Slack Flavor
+
+A Slack flavored build of the same API is available from the `markdown-factory/slack-mrkdwn` entrypoint. It renders [mrkdwn](https://api.slack.com/reference/surfaces/formatting) instead of standard markdown, and every function returns a `MrkdwnString` - a string that also carries the AST built up by the nested invocations.
+
+```typescript
+import { h1, ul, bold } from 'markdown-factory/slack-mrkdwn';
+
+const message = h1('Deploy finished', `Status: ${bold('green')}`, ul('api', 'web'));
+
+message.toString(); // the raw mrkdwn
+message.asBlockkitBlocks(); // the same content as Block Kit blocks
+message.asMdast(); // the same content as an mdast tree
+```
+
+> Note - `MrkdwnString` extends `String`, so it can be interpolated, concatenated and compared like any other string. It is not the `string` primitive type though, so functions that are typed to accept `string` need `String(value)` (or `value.toString()`).
+
+### `asBlockkitBlocks`
+
+Block Kit has no markdown parser, and only a handful of block types, so the AST is mapped onto the blocks that exist:
+
+| Markdown                      | Block Kit                                                                           |
+| ----------------------------- | ----------------------------------------------------------------------------------- |
+| Headings (depth 1-2)          | A `header` block, with formatting stripped and the text truncated to 150 characters |
+| Headings (depth 3-6)          | A `section` block containing bold text                                              |
+| Paragraphs and inline content | Merged into a single `section` block until the next block level element             |
+| Lists                         | A `section` block, with `•`/numbered bullets and indented sub-lists                 |
+| Code blocks and tables        | A `section` block of preformatted text, so that table columns stay aligned          |
+| Block quotes                  | A `section` block using Slack's `>` quote syntax                                    |
+
+Text longer than Slack's 3000 character section limit is split across several `section` blocks on line boundaries. The defaults can be adjusted per call:
+
+```typescript
+message.asBlockkitBlocks({
+  maxHeaderLevel: 3, // render h3s as header blocks too. Defaults to 2.
+  maxSectionLength: 3000, // characters per section block.
+  maxHeaderLength: 150, // characters per header block.
+  emoji: true, // whether Slack should escape emoji in header blocks.
+});
+```
+
+### `asMdast`
+
+The AST follows the [mdast](https://github.com/syntax-tree/mdast) vocabulary - `heading` nodes have a `depth`, emphasis is `strong`/`emphasis`/`delete`, lists hold `listItem` children, and so on. `asMdast` converts it into an mdast tree that is structurally assignable to the types in `@types/mdast`, so it can be handed to the unified / remark ecosystem:
+
+```typescript
+import { unified } from 'unified';
+import remarkGfm from 'remark-gfm';
+import remarkStringify from 'remark-stringify';
+import type { Root } from 'mdast';
+
+const tree: Root = message.asMdast();
+const gfm = unified().use(remarkGfm).use(remarkStringify).stringify(tree);
+```
+
+> Note - none of the mdast packages are dependencies of this library; the conversion is a plain object transform. Content that was passed in as a plain string becomes an mdast `html` node rather than a `text` node, since it is already rendered markdown and escaping it would change what it renders to.
