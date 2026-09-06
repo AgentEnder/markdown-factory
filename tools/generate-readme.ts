@@ -1,5 +1,6 @@
 import { writeFileSync } from 'fs';
 import { join } from 'path';
+import { format, resolveConfig } from 'prettier';
 import {
   blockQuote,
   codeBlock,
@@ -10,11 +11,21 @@ import {
   linkToHeader,
   orderedList,
   stripIndents,
+  table,
   tableOfContents,
   unorderedList,
 } from '../packages/markdown-factory/src/lib/markdown';
 
-export const contents = tableOfContents(
+const README_PATH = join(__dirname, '../README.md');
+
+/**
+ * Links to a file in the repository. The README is published to npm and to the
+ * docs site, where relative links do not resolve.
+ */
+const repoFile = (path: string) =>
+  `https://github.com/agentender/markdown-factory/tree/main/${path}`;
+
+const document = tableOfContents(
   3,
   h1(
     'Markdown Factory',
@@ -47,11 +58,11 @@ export const contents = tableOfContents(
       'Some advanced usages of the library can be found below:',
       unorderedList(
         `The ${link(
-          './tools/generate-readme.ts',
+          repoFile('tools/generate-readme.ts'),
           '`generate-readme`'
         )} script generates this document`,
         `The ${link(
-          './packages/markdown-factory/src/lib/markdown.ts',
+          repoFile('packages/markdown-factory/src/lib/markdown.ts'),
           'implementation file'
         )} for this library contains \`tableOfContents\` which dynamically composes several of these utility functions.`
       )
@@ -297,10 +308,127 @@ export const contents = tableOfContents(
           'typescript'
         )
       )
+    ),
+    h2(
+      'Slack Flavor',
+      `A Slack flavored build of the same API is available from the \`markdown-factory/slack-mrkdwn\` entrypoint. It renders ${link(
+        'https://api.slack.com/reference/surfaces/formatting',
+        'mrkdwn'
+      )} instead of standard markdown, and every function returns a \`MrkdwnString\` - a string that also carries the AST built up by the nested invocations.`,
+      codeBlock(
+        `import { h1, ul, bold } from 'markdown-factory/slack-mrkdwn';
+
+const message = h1('Deploy finished', \`Status: \${bold('green')}\`, ul('api', 'web'));
+
+message.toString();         // the raw mrkdwn
+message.asBlockkitBlocks(); // the same content as Block Kit blocks
+message.asMdast();          // the same content as an mdast tree`,
+        'typescript'
+      ),
+      blockQuote(
+        'Note - `MrkdwnString` extends `String`, so template literals, concatenation, `.length`, every `String` method, `JSON.stringify` and `==` all behave as they always have. It is an object rather than the `string` primitive though, so a few things do differ:',
+        unorderedList(
+          'TypeScript will not assign it to a `string`. Use `String(value)`, or `value.toString()`.',
+          "Strict equality against a string literal (`value === '*foo*'`), `switch (value)`, `array.includes(value)` and `set.has(value)` are all `false`. Use `==`, or convert first.",
+          "`typeof value` is `'object'`, so APIs that check it - `fs.writeFileSync(path, value)`, for instance - need `String(value)`."
+        )
+      ),
+      h3(
+        '`asBlockkitBlocks`',
+        'Block Kit has no markdown parser, and only a handful of block types, so the AST is mapped onto the blocks that exist:',
+        table(
+          [
+            {
+              element: 'Headings (depth 1-2)',
+              output:
+                'A `header` block, with formatting stripped and the text truncated to 150 characters',
+            },
+            {
+              element: 'Headings (depth 3-6)',
+              output: 'A `section` block containing bold text',
+            },
+            {
+              element: 'Paragraphs and inline content',
+              output:
+                'Merged into a single `section` block until the next block level element',
+            },
+            {
+              element: 'Lists',
+              output:
+                'A `section` block, with `•`/numbered bullets and indented sub-lists',
+            },
+            {
+              element: 'Code blocks',
+              output: 'A `rich_text` block containing `rich_text_preformatted`',
+            },
+            {
+              element: 'Tables',
+              output:
+                'A `table` block. Cells built with `link`, `bold` and friends become `rich_text` cells, so they stay formatted; plain cells are `raw_text`',
+            },
+            {
+              element: 'Block quotes',
+              output: "A `section` block using Slack's `>` quote syntax",
+            },
+          ],
+          [
+            { label: 'Markdown', field: 'element' },
+            { label: 'Block Kit', field: 'output' },
+          ]
+        ),
+        "Text longer than Slack's 3000 character section limit is split across several `section` blocks on line boundaries. The defaults can be adjusted per call:",
+        codeBlock(
+          stripIndents`
+          message.asBlockkitBlocks({
+            maxHeaderLevel: 3, // render h3s as header blocks too. Defaults to 2.
+            maxSectionLength: 3000, // characters per section block.
+            maxHeaderLength: 150, // characters per header block.
+            emoji: true, // whether Slack should escape emoji in header blocks.
+            tableBlocks: true, // render tables as \`table\` blocks.
+          });`,
+          'typescript'
+        ),
+        blockQuote(
+          'Note - only messages support `table` blocks. Set `tableBlocks: false` when the output is bound for a modal or an App Home tab, and tables fall back to preformatted text. A table Slack would reject - over 100 rows, over 20 columns, or over 10,000 characters of cell content in the message - falls back on its own either way, so the message stays valid.'
+        )
+      ),
+      h3(
+        '`asMdast`',
+        `The AST follows the ${link(
+          'https://github.com/syntax-tree/mdast',
+          'mdast'
+        )} vocabulary - \`heading\` nodes have a \`depth\`, emphasis is \`strong\`/\`emphasis\`/\`delete\`, lists hold \`listItem\` children, and so on. \`asMdast\` converts it into an mdast tree that is structurally assignable to the types in \`@types/mdast\`, so it can be handed to the unified / remark ecosystem:`,
+        codeBlock(
+          stripIndents`
+          import { unified } from 'unified';
+          import remarkGfm from 'remark-gfm';
+          import remarkStringify from 'remark-stringify';
+          import type { Root } from 'mdast';
+
+          const tree: Root = message.asMdast();
+          const gfm = unified().use(remarkGfm).use(remarkStringify).stringify(tree);`,
+          'typescript'
+        ),
+        blockQuote(
+          'Note - none of the mdast packages are dependencies of this library; the conversion is a plain object transform. Content that was passed in as a plain string becomes an mdast `html` node rather than a `text` node, since it is already rendered markdown and escaping it would change what it renders to.'
+        )
+      )
     )
   )
 );
 
+/**
+ * The generated README, formatted with the repo's prettier config so that it
+ * matches the file on disk exactly. `assertReadmeUnchanged` in the build step
+ * compares against this.
+ */
+export const contents = format(document, {
+  // `editorconfig` matters here: .editorconfig turns off the line length limit
+  // for markdown, which is what keeps the embedded code samples on one line.
+  ...resolveConfig.sync(README_PATH, { editorconfig: true }),
+  parser: 'markdown',
+});
+
 if (require.main === module) {
-  writeFileSync(join(__dirname, '../README.md'), contents);
+  writeFileSync(README_PATH, contents);
 }

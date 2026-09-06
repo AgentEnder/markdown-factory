@@ -26,17 +26,24 @@ export async function applyExtraBuildSteps() {
   const ora = await importESM<typeof import('ora')>('ora').then(
     (m: typeof import('ora')) => m.default
   );
+  let failed = false;
   for (const fn in projectBuildSteps) {
     const spinner = ora();
     spinner.start(`Running extra build step: ${fn}`);
-    await projectBuildSteps[fn](
+    const result = await projectBuildSteps[fn](
       args.project,
       projectConfiguration,
       args.targetName
     );
-    spinner.succeed();
+    if (result?.success === false) {
+      spinner.fail(`${fn}: ${result.message}`);
+      failed = true;
+    } else {
+      spinner.succeed();
+    }
   }
-  process.exit(0);
+  // Without this, a failing step still exits 0 and the build reports success.
+  process.exit(failed ? 1 : 0);
 }
 
 applyExtraBuildSteps();

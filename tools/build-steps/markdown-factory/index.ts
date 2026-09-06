@@ -38,11 +38,11 @@ export const copyReadme: ExtraBuildStep = (
 };
 
 function assertReadmeUnchanged() {
-  const currentReadmeContents = readFileSync('README.md', 'utf-8');
+  const currentReadmeContents = readFileSync(README_PATH, 'utf-8');
   const nextReadmeContents = require('../../generate-readme').contents;
-  if (!currentReadmeContents === nextReadmeContents) {
+  if (currentReadmeContents !== nextReadmeContents) {
     throw new Error(
-      'README.md has changed. Please run `yarn generate-readme`.'
+      'README.md is out of date with tools/generate-readme.ts. Please run `npm run generate-readme`.'
     );
   }
 }
