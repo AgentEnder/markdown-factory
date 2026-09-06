@@ -41,6 +41,14 @@ describe('slack-mrkdwn', () => {
       expect(JSON.stringify({ value })).toEqual('{"value":"*foo*"}');
     });
 
+    it('should print as mrkdwn rather than as a String wrapper', () => {
+      // console.log / util.format('%s') go through the custom inspect hook.
+      const inspect = (bold('foo') as unknown as Record<symbol, () => string>)[
+        Symbol.for('nodejs.util.inspect.custom')
+      ];
+      expect(inspect.call(bold('foo'))).toEqual('*foo*');
+    });
+
     it('should match the default flavor for block level elements', () => {
       const items = [{ name: 'A' }, { name: 'B' }];
       expect(h1('Title', 'body').toString()).toEqual(

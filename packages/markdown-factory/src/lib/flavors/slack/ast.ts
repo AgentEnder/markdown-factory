@@ -283,6 +283,17 @@ export class MrkdwnString extends String {
   }
 
   /**
+   * Prints the mrkdwn rather than the `String` wrapper, so that
+   * `console.log(message)` and `util.format('%s', message)` show the markdown
+   * that was built.
+   *
+   * @returns The mrkdwn this value renders to.
+   */
+  [Symbol.for('nodejs.util.inspect.custom')](): string {
+    return this.toString();
+  }
+
+  /**
    * Renders this value as an array of Slack Block Kit blocks.
    *
    * @param options See {@link AsBlockkitBlocksOptions}.
